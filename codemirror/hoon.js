@@ -156,4 +156,5 @@ CodeMirror.defineMode("hoon", function() {
   return res
 });
 
+CodeMirror.registerHelper("wordChars", "hoon", /[-\\w]/);
 CodeMirror.defineMIME("text/x-hoon", "hoon");
