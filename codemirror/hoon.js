@@ -3,18 +3,18 @@ CodeMirror.defineMode("hoon", function() {
   term = /^[$&|]|^[a-z]([a-z0-9\-]*[a-z0-9])?/
   num = /-?-?^[0-9]([0-9.]*|[xwbv]?[0-9a-zA-Z.-~]*)/
   res = {}
-  res.startState = function(){return {soblock: false, doqblock:false, inter:false, sail:false, space:true}}
+  res.startState = function(){return {soblock: false, doqblock:false, inter:[], sail:false, space:true}}
   var propOrVar = function(c){
       if(c == '.')
         return 'property'
       return 'variable'
   }
   var nomQuote = function(stream,state){
-    reg = new RegExp('^[^'+state.inter+'{\\\\]')
+    reg = new RegExp('^[^'+state.inter[0]+'{\\\\]')
     while(stream.match(reg) || stream.match(/\\./));
     if(!stream.eat("{")) {
-      if(state.inter){stream.eat(state.inter)}
-      state.inter = false
+      if(state.inter[0]){stream.eat(state.inter[0])}
+      state.inter.shift()
     }
     return 'string'
   }
@@ -37,7 +37,7 @@ CodeMirror.defineMode("hoon", function() {
       }
       return "string"
     }
-    if((state.inter !== false) && stream.eat('}')){
+    if((state.inter.length) && stream.eat('}')){
       return nomQuote(stream,state)
     }
 
@@ -75,7 +75,7 @@ CodeMirror.defineMode("hoon", function() {
         stream.skipToEnd()
         return 'string'
       }
-      state.inter = '"'
+      state.inter.unshift('"')
       return nomQuote(stream,state)
     }
     if(stream.match(' ;')){
