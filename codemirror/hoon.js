@@ -1,7 +1,7 @@
 CodeMirror.defineMode("hoon", function() {
   glyph = /[+\-|$%:.#^~;=?!_,&\/<>%*]/
   term = /^[$&|]|^[a-z]([a-z0-9\-]*[a-z0-9])?/
-  num = /-?-?^[0-9]([0-9.]*|[xwbv]?[0-9a-zA-Z.-~]*)/
+  num = /~[a-z0-9._~-]+|-?-?^[0-9]([0-9.]*|[xwbv]?[0-9a-zA-Z.-~]*)/
   res = {}
   res.startState = function(){return {soblock: false, doqblock:false, inter:[], sail:false, space:true}}
   var propOrVar = function(c){
@@ -104,17 +104,24 @@ CodeMirror.defineMode("hoon", function() {
       else return 'header'
     }
 
-    if(stream.eat('%'))
-      if(stream.match(term) || stream.match(num))
+    if(stream.match(/^@[a-z]*[A-Z]?/))
+      return 'atom'
+    if(stream.match(num))
+      return 'number'
+
+    if(stream.eat(/[%$]/))
+      if(stream.match(term) || stream.match(num) || stream.match('~'))
         return 'tag'
       else stream.backUp(1)
     if(state.space && stream.match('==')){
       return 'tag'
     }
-    if(stream.match(/^@[a-z]*[A-Z]?/))
-      return 'atom'
-    if(stream.match(num))
-      return 'number'
+    
+    if(stream.eat('~')){
+      if(stream.eol()) return 'tag'
+      if(/[\]) ]/.exec(stream.peek())) return 'tag'
+      stream.backUp(1)
+    }
 
     if(stream.eat(/[+\-]/)){
       while(stream.eat(/[<>]/) && stream.eat(/[+\-]/));
@@ -143,7 +150,7 @@ CodeMirror.defineMode("hoon", function() {
           return 'builtin'
         return 'operator'
       }
-      if(stream.eat(/[=:.^]/)){
+      if(stream.eat(/[=:.^/]/)){
         state.space = true
         return 'operator'
       }
@@ -152,16 +159,16 @@ CodeMirror.defineMode("hoon", function() {
     }
 
     if(stream.match(term)){
-      if(state.space && stream.match('/'))
+      if(state.space && stream.match('+'))
         return 'tag'
       state.space = false
       return propOrVar(stream.peek())
     }
-    if(stream.eat(/[ \[(]/)){
+    if(stream.eat(/[ \[({]/)){
       state.space = true
       return
     }
-    if(stream.eat(')') || stream.eat(']')){  //  XX paren match
+    if(stream.eat(/[)}]/) || stream.eat(']')){  //  XX paren match
       return
     }
     stream.next()
