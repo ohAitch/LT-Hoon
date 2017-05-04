@@ -89,7 +89,7 @@ CodeMirror.defineMode("hoon", function() {
       return 'builtin'
     }
 
-    if(stream.match('::')){
+    if(stream.match('::') || stream.match(':>')  || stream.match(':<')){
       stream.skipToEnd()
       return 'comment'
     }
